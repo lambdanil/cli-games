@@ -286,7 +286,7 @@ void print_scr(struct game_state& game) {
     game.screen.buf[game.head.y][game.head.x] = FLOOR_CHAR;
     unsigned int fx = rand() % game.screen.width;
     unsigned int fy = rand() % game.screen.height;
-    while (game.screen.buf[fy][fx] != FLOOR_CHAR) {
+    while (buf[fy][fx] != FLOOR_CHAR) {
       fx = rand() % game.screen.width;
       fy = rand() % game.screen.height;
     }
