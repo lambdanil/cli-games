@@ -1,4 +1,5 @@
 #include<iostream>
+#include<sstream>
 #include<vector>
 #include<thread>
 #include<chrono>
@@ -8,10 +9,20 @@ using std::cout;
 using std::cin;
 using std::string;
 using std::vector;
+using std::stringstream;
 
 #define WIDTH 38
 #define HEIGHT 22
 #define COLOR_ENABLE // comment to false to disable colors
+
+
+//#define SINGLE_DRAW // draw entire screen buffer at once - may improve performance on some consoles
+
+#ifdef SINGLE_DRAW
+#define SCR_BUF scr_buf
+#else
+#define SCR_BUF cout
+#endif
 
 #ifdef COLOR_ENABLE
   #define COL_CYAN "\033[36m"
@@ -46,6 +57,9 @@ using std::vector;
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
 #include <Windows.h>
+void cls() {
+  system("cls");
+}
 int key_press(char* mv) { // not working: F11 (-122, toggles fullscreen)
     KEY_EVENT_RECORD keyevent;
     INPUT_RECORD irec;
@@ -107,6 +121,9 @@ int key_press(char* mv) { // not working: F11 (-122, toggles fullscreen)
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
+void cls() {
+  system("clear");
+}
 int key_press(char* mv) { // not working: ¹ (251), num lock (-144), caps lock (-20), windows key (-91), kontext menu key (-93)
     struct termios term;
     tcgetattr(0, &term);
@@ -231,10 +248,6 @@ struct game_state {
 };
 
 
-void cls() {
-  system("clear");
-}
-
 void game_end(struct game_state game) {
   cout << "\nGame over!\n";
   cout << "Final score: " << game.segments.size() << std::endl;
@@ -242,7 +255,12 @@ void game_end(struct game_state game) {
 }
 
 void print_scr(struct game_state game) {
-  cls();
+
+  #ifndef SINGLE_DRAW
+    cls();
+  #endif
+
+  stringstream scr_buf;
 
   char** buf = (char**)malloc(game.screen.height * sizeof(char*));
   for (unsigned int i = 0; i < game.screen.height; i++) {
@@ -263,26 +281,30 @@ void print_scr(struct game_state game) {
   buf[game.head.y][game.head.x] = HEAD_CHAR;
 
   for (unsigned int j = 0; j <= game.screen.width + 1; j++)
-    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
+    SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
 
-  cout << " Score: " << game.segments.size();
+  SCR_BUF << " Score: " << game.segments.size();
 
-  cout << "\n";
+  SCR_BUF << "\n";
 
   for (unsigned int i = 0; i < game.screen.height; i++) {
-    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
+    SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
     for (unsigned int j = 0; j < game.screen.width; j++) {
         if (buf[i][j] == SEG_CHAR)
-          cout << COL_SEG << buf[i][j] << COL_WHITE;
+          SCR_BUF << COL_SEG << buf[i][j] << COL_WHITE;
         else if (buf[i][j] == HEAD_CHAR)
-          cout << COL_HEAD << buf[i][j] << COL_WHITE;
+          SCR_BUF << COL_HEAD << buf[i][j] << COL_WHITE;
         else if (buf[i][j] == FOOD_CHAR)
-          cout << COL_FOOD << buf[i][j] << COL_WHITE;
+          SCR_BUF << COL_FOOD << buf[i][j] << COL_WHITE;
         else
-          cout << buf[i][j];
+          SCR_BUF << buf[i][j];
     }
-    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
-    cout << "\n";
+    SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
+    SCR_BUF << '\n';
+    #ifdef SINGLE_DRAW
+      cls();
+      cout << SCR_BUF.str();
+    #endif
   }
 
   for (unsigned int i = 0; i < game.screen.height; i++) {
