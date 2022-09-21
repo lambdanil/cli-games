@@ -247,7 +247,7 @@ struct game_state {
   struct pos head;
   unsigned int fruits = 0;
   vector<struct pos> segments;
-  char dir = 'u'; // u d l r for direction
+  char dir; // u d l r for direction
 };
 
 
