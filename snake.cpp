@@ -232,6 +232,7 @@ struct scr_buf {
   const unsigned int width = WIDTH;
   const unsigned int height = HEIGHT;
   char buf[HEIGHT][WIDTH];
+  char sbuf[HEIGHT][WIDTH];
 };
 
 struct pos {
@@ -252,9 +253,10 @@ struct game_state {
 
 void game_end(struct game_state game) {
   cout << "\nGame over!\n";
-  cout << "Final score: " << game.segments.size() << std::endl;
+  cout << "Final score: " << game.segments.size() - 2 << std::endl;
   exit(0);
 }
+
 
 void print_scr(struct game_state& game) {
 
@@ -264,57 +266,49 @@ void print_scr(struct game_state& game) {
 
   stringstream scr_buf;
 
-  char** buf = (char**)malloc(game.screen.height * sizeof(char*));
-  for (unsigned int i = 0; i < game.screen.height; i++) {
-    buf[i] = (char*)malloc(game.screen.width * sizeof(char));
-  }
-  for (unsigned int i = 0; i < game.screen.height; i++) {
-    for (unsigned int j = 0; j < game.screen.width; j++) {
-        buf[i][j] = game.screen.buf[i][j];
-    }
-  }
+  if (game.segments.size())
+    game.screen.sbuf[game.segments.at(game.segments.size() - 1).y][game.segments.at(game.segments.size() - 1).x] = game.screen.buf[game.segments.at(game.segments.size() - 1).y][game.segments.at(game.segments.size() - 1).x];
 
-  for (unsigned int i = 0; i < game.segments.size(); i++) {
-    buf[game.segments.at(i).y][game.segments.at(i).x] = SEG_CHAR;
-  }
-
-  if (buf[game.head.y][game.head.x] == SEG_CHAR)
+  if (game.screen.sbuf[game.head.y][game.head.x] == SEG_CHAR)
     game_end(game);
-  buf[game.head.y][game.head.x] = HEAD_CHAR;
+
+  game.screen.sbuf[game.head.y][game.head.x] = HEAD_CHAR;
+  if (game.segments.size())
+    game.screen.sbuf[game.segments.at(0).y][game.segments.at(0).x] = SEG_CHAR;
 
   // add fruit into empty space
   if (game.screen.buf[game.head.y][game.head.x] == FOOD_CHAR) {
     game.screen.buf[game.head.y][game.head.x] = FLOOR_CHAR;
     unsigned int fx = rand() % game.screen.width;
     unsigned int fy = rand() % game.screen.height;
-    while (buf[fy][fx] != FLOOR_CHAR) {
+    while (game.screen.sbuf[fy][fx] != FLOOR_CHAR) {
       fx = rand() % game.screen.width;
       fy = rand() % game.screen.height;
     }
     game.screen.buf[fy][fx] = FOOD_CHAR;
-    if (buf[fy][fx] == FLOOR_CHAR)
-      buf[fy][fx] = FOOD_CHAR;
+    if (game.screen.sbuf[fy][fx] == FLOOR_CHAR)
+      game.screen.sbuf[fy][fx] = FOOD_CHAR;
     game.add_segment_next_loop = true;
   }
 
   for (unsigned int j = 0; j <= game.screen.width + 1; j++)
     SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
 
-  SCR_BUF << " Score: " << game.segments.size();
+  SCR_BUF << " Score: " << game.segments.size() - 2;
 
   SCR_BUF << "\n";
 
   for (unsigned int i = 0; i < game.screen.height; i++) {
     SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
     for (unsigned int j = 0; j < game.screen.width; j++) {
-        if (buf[i][j] == SEG_CHAR)
-          SCR_BUF << COL_SEG << buf[i][j] << COL_WHITE;
-        else if (buf[i][j] == HEAD_CHAR)
-          SCR_BUF << COL_HEAD << buf[i][j] << COL_WHITE;
-        else if (buf[i][j] == FOOD_CHAR)
-          SCR_BUF << COL_FOOD << buf[i][j] << COL_WHITE;
+        if (game.screen.sbuf[i][j] == SEG_CHAR)
+          SCR_BUF << COL_SEG << game.screen.sbuf[i][j] << COL_WHITE;
+        else if (game.screen.sbuf[i][j] == HEAD_CHAR)
+          SCR_BUF << COL_HEAD << game.screen.sbuf[i][j] << COL_WHITE;
+        else if (game.screen.sbuf[i][j] == FOOD_CHAR)
+          SCR_BUF << COL_FOOD << game.screen.sbuf[i][j] << COL_WHITE;
         else
-          SCR_BUF << buf[i][j];
+          SCR_BUF << game.screen.sbuf[i][j];
     }
     SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
     SCR_BUF << '\n';
@@ -323,11 +317,6 @@ void print_scr(struct game_state& game) {
       cout << SCR_BUF.str();
     #endif
   }
-
-  for (unsigned int i = 0; i < game.screen.height; i++) {
-    free(buf[i]);
-  }
-  free(buf);
 
   for (unsigned int j = 0; j <= game.screen.width + 1; j++)
     cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
@@ -413,6 +402,16 @@ int main() {
   game.head.y = game.screen.height / 2;
   fill_screen(game.screen, FLOOR_CHAR);
   add_fruit(game);
+  for (unsigned int i = 0; i < game.segments.size(); i++) {
+    game.screen.sbuf[game.segments.at(i).y][game.segments.at(i).x] = SEG_CHAR;
+  }
+  for (unsigned int i = 0; i < game.screen.height; i++)
+    for (unsigned int j = 0; j < game.screen.width; j++)
+      game.screen.sbuf[i][j] = game.screen.buf[i][j];
+  struct pos i;
+  i.x = game.head.x;
+  i.y = game.head.y;
+  game.segments.push_back(i);
   while (true) {
     *mv = 0;
     eval_move(game);
