@@ -11,6 +11,30 @@ using std::vector;
 
 #define WIDTH 38
 #define HEIGHT 22
+#define COLOR_ENABLE // comment to false to disable colors
+
+#ifdef COLOR_ENABLE
+  #define COL_CYAN "\033[36m"
+  #define COL_MAGENTA "\033[35m"
+  #define COL_RED "\033[91m"
+  #define COL_GREEN "\033[92m"
+  #define COL_YELLOW "\033[33m"
+  #define COL_WHITE "\033[0m"
+  #define COL_GRAY "\033[90m"
+#else // set all colors to white if in colorless mode
+  #define COL_CYAN "\033[0m"
+  #define COL_MAGENTA "\033[0m"
+  #define COL_RED "\033[0m"
+  #define COL_GREEN "\033[0m"
+  #define COL_YELLOW "\033[0m"
+  #define COL_WHITE "\033[0m"
+  #define COL_GRAY "\033[0m"
+#endif
+
+#define COL_BORDER COL_GRAY
+#define COL_FOOD COL_RED
+#define COL_HEAD COL_GREEN
+#define COL_SEG COL_GREEN
 
 #define HEAD_CHAR 'X'
 #define SEG_CHAR 'x'
@@ -200,8 +224,7 @@ struct pos {
 struct game_state {
   struct scr_buf screen;
   unsigned int score = 0;
-  unsigned int head_pos_x = 30;
-  unsigned int head_pos_y = 15;
+  struct pos head;
   unsigned int fruits = 0;
   vector<struct pos> segments;
   char dir = 'u'; // u d l r for direction
@@ -235,25 +258,30 @@ void print_scr(struct game_state game) {
     buf[game.segments.at(i).y][game.segments.at(i).x] = SEG_CHAR;
   }
 
+  if (buf[game.head.y][game.head.x] == SEG_CHAR)
+    game_end(game);
+  buf[game.head.y][game.head.x] = HEAD_CHAR;
+
   for (unsigned int j = 0; j <= game.screen.width + 1; j++)
-    cout << BORDER_CHAR;
+    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
 
   cout << " Score: " << game.segments.size();
 
   cout << "\n";
 
   for (unsigned int i = 0; i < game.screen.height; i++) {
-    cout << BORDER_CHAR;
+    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
     for (unsigned int j = 0; j < game.screen.width; j++) {
-      if (game.head_pos_x == j && game.head_pos_y == i) {
         if (buf[i][j] == SEG_CHAR)
-          game_end(game);
-        cout << SEG_CHAR;
-      }
-      else
-        cout << buf[i][j];
+          cout << COL_SEG << buf[i][j] << COL_WHITE;
+        else if (buf[i][j] == HEAD_CHAR)
+          cout << COL_HEAD << buf[i][j] << COL_WHITE;
+        else if (buf[i][j] == FOOD_CHAR)
+          cout << COL_FOOD << buf[i][j] << COL_WHITE;
+        else
+          cout << buf[i][j];
     }
-    cout << BORDER_CHAR;
+    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
     cout << "\n";
   }
 
@@ -263,7 +291,7 @@ void print_scr(struct game_state game) {
   free(buf);
 
   for (unsigned int j = 0; j <= game.screen.width + 1; j++)
-    cout << BORDER_CHAR;
+    cout << COL_BORDER << BORDER_CHAR << COL_WHITE;
 }
 
 void fill_screen(struct scr_buf& screen, const char f) {
@@ -285,17 +313,17 @@ void eval_move(struct game_state& game) {
 
   static bool add_segment_next_loop;
 
-  unsigned int new_seg_x;
-  unsigned int new_seg_y;
+
+  struct pos new_seg;
 
   if (game.segments.size()) {
     // used to append new segment
-    new_seg_x = game.segments.at(game.segments.size() - 1).x;
-    new_seg_y = game.segments.at(game.segments.size() - 1).y;
+    new_seg.x = game.segments.at(game.segments.size() - 1).x;
+    new_seg.y = game.segments.at(game.segments.size() - 1).y;
   }
   else {
-    new_seg_x = game.head_pos_x;
-    new_seg_y = game.head_pos_y;
+    new_seg.x = game.head.x;
+    new_seg.y = game.head.y;
   }
 
   if (game.segments.size()) {
@@ -306,45 +334,42 @@ void eval_move(struct game_state& game) {
   }
 
   if (game.segments.size()) {
-    game.segments.at(0).x = game.head_pos_x;
-    game.segments.at(0).y = game.head_pos_y;
+    game.segments.at(0).x = game.head.x;
+    game.segments.at(0).y = game.head.y;
   }
 
   if (add_segment_next_loop) {
     add_segment_next_loop = false;
-    struct pos seg;
-    seg.x = new_seg_x;
-    seg.y = new_seg_y;
-    game.segments.push_back(seg); // add new segment
+    game.segments.push_back(new_seg); // add new segment
   }
 
   switch(game.dir) {
     case 'u':
-      if (game.head_pos_y == 0)
+      if (game.head.y == 0)
         game_end(game);
-      game.head_pos_y--;
+      game.head.y--;
       break;
     case 'd':
-      if (game.head_pos_y == game.screen.height - 1)
+      if (game.head.y == game.screen.height - 1)
         game_end(game);
-      game.head_pos_y++;
+      game.head.y++;
       break;
     case 'r':
-      if (game.head_pos_x == game.screen.width - 1)
+      if (game.head.x == game.screen.width - 1)
         game_end(game);
-      game.head_pos_x++;
+      game.head.x++;
       break;
     case 'l':
-      if (game.head_pos_x == 0)
+      if (game.head.x == 0)
         game_end(game);
-      game.head_pos_x--;
+      game.head.x--;
       break;
   }
 
   // check for fruit
-  if (game.screen.buf[game.head_pos_y][game.head_pos_x] == FOOD_CHAR) {
+  if (game.screen.buf[game.head.y][game.head.x] == FOOD_CHAR) {
     add_segment_next_loop = true;
-    game.screen.buf[game.head_pos_y][game.head_pos_x] = FLOOR_CHAR;
+    game.screen.buf[game.head.y][game.head.x] = FLOOR_CHAR;
     add_fruit(game);
     game.fruits--;
   }
@@ -357,6 +382,8 @@ int main() {
   char* mv = new char;
   std::thread key_thread(key_press, std::ref(mv));
   struct game_state game;
+  game.head.x = game.screen.width / 2;
+  game.head.y = game.screen.height / 2;
   fill_screen(game.screen, FLOOR_CHAR);
   add_fruit(game);
   while (true) {
