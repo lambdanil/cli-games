@@ -4,6 +4,7 @@
 #include<thread>
 #include<chrono>
 #include<string.h>
+#include <cstdlib>
 
 using std::cout;
 using std::cin;
