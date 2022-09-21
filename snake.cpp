@@ -240,6 +240,7 @@ struct pos {
 
 struct game_state {
   struct scr_buf screen;
+  bool add_segment_next_loop = true;
   unsigned int score = 0;
   struct pos head;
   unsigned int fruits = 0;
@@ -254,7 +255,7 @@ void game_end(struct game_state game) {
   exit(0);
 }
 
-void print_scr(struct game_state game) {
+void print_scr(struct game_state& game) {
 
   #ifndef SINGLE_DRAW
     cls();
@@ -279,6 +280,21 @@ void print_scr(struct game_state game) {
   if (buf[game.head.y][game.head.x] == SEG_CHAR)
     game_end(game);
   buf[game.head.y][game.head.x] = HEAD_CHAR;
+
+  // add fruit into empty space
+  if (game.screen.buf[game.head.y][game.head.x] == FOOD_CHAR) {
+    game.screen.buf[game.head.y][game.head.x] = FLOOR_CHAR;
+    unsigned int fx = rand() % game.screen.width;
+    unsigned int fy = rand() % game.screen.height;
+    while (game.screen.buf[fy][fx] != FLOOR_CHAR) {
+      fx = rand() % game.screen.width;
+      fy = rand() % game.screen.height;
+    }
+    game.screen.buf[fy][fx] = FOOD_CHAR;
+    if (buf[fy][fx] == FLOOR_CHAR)
+      buf[fy][fx] = FOOD_CHAR;
+    game.add_segment_next_loop = true;
+  }
 
   for (unsigned int j = 0; j <= game.screen.width + 1; j++)
     SCR_BUF << COL_BORDER << BORDER_CHAR << COL_WHITE;
@@ -328,13 +344,9 @@ void add_fruit(struct game_state& game) {
   unsigned int x = rand() % game.screen.width;
   unsigned int y = rand() % game.screen.height;
   game.screen.buf[y][x] = FOOD_CHAR;
-  game.fruits++;
 }
 
 void eval_move(struct game_state& game) {
-
-  static bool add_segment_next_loop;
-
 
   struct pos new_seg;
 
@@ -360,8 +372,8 @@ void eval_move(struct game_state& game) {
     game.segments.at(0).y = game.head.y;
   }
 
-  if (add_segment_next_loop) {
-    add_segment_next_loop = false;
+  if (game.add_segment_next_loop) {
+    game.add_segment_next_loop = false;
     game.segments.push_back(new_seg); // add new segment
   }
 
@@ -386,14 +398,6 @@ void eval_move(struct game_state& game) {
         game_end(game);
       game.head.x--;
       break;
-  }
-
-  // check for fruit
-  if (game.screen.buf[game.head.y][game.head.x] == FOOD_CHAR) {
-    add_segment_next_loop = true;
-    game.screen.buf[game.head.y][game.head.x] = FLOOR_CHAR;
-    add_fruit(game);
-    game.fruits--;
   }
 }
 
