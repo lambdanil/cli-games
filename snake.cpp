@@ -260,29 +260,7 @@ void move_food(struct game_state& game) {
 
 void print_screen(struct game_state& game) {
   struct scr_buf& screen = game.screen;
-  static struct pos last_segment;
-  static bool first_run = true;
-
   stringstream buf_stream;
-
-  if (game.segments.size()) {
-    if (first_run) {
-      first_run = false;
-    }
-
-    if (!game.add_segment_next_loop) {
-      screen.buf[last_segment.y][last_segment.x] = FLOOR_CHAR;
-      last_segment.x = game.segments.at(game.segments.size() - 1).x;
-      last_segment.y = game.segments.at(game.segments.size() - 1).y;
-    }
-
-    screen.buf[game.segments.at(0).y][game.segments.at(0).x] = SEG_CHAR;
-  }
-
-  if (!(game.head.x == game.segments.at(0).x && game.head.y == game.segments.at(0).y)
-      &&
-      screen.buf[game.head.y][game.head.x] == SEG_CHAR && !first_run)
-    game_over(game);
 
   #ifndef SINGLE_DRAW
     cls();
@@ -329,7 +307,10 @@ void print_screen(struct game_state& game) {
 }
 
 void next_frame(struct game_state& game) {
+  struct scr_buf& screen = game.screen;
   bool& add_segment_next_loop = game.add_segment_next_loop;
+  static struct pos last_segment;
+  static bool first_run = true;
 
   if (game.segments.size()) {
     struct pos new_segment;
@@ -367,6 +348,25 @@ void next_frame(struct game_state& game) {
       game.head.x--;
       break;
   }
+
+  if (game.segments.size()) {
+    if (first_run) {
+      first_run = false;
+    }
+
+    if (!game.add_segment_next_loop) {
+      screen.buf[last_segment.y][last_segment.x] = FLOOR_CHAR;
+      last_segment.x = game.segments.at(game.segments.size() - 1).x;
+      last_segment.y = game.segments.at(game.segments.size() - 1).y;
+    }
+
+    screen.buf[game.segments.at(0).y][game.segments.at(0).x] = SEG_CHAR;
+  }
+
+  if (!(game.head.x == game.segments.at(0).x && game.head.y == game.segments.at(0).y)
+      &&
+      screen.buf[game.head.y][game.head.x] == SEG_CHAR && !first_run)
+    game_over(game);
 
   if (game.head.x == game.food.x && game.head.y == game.food.y) {
     add_segment_next_loop = true;
