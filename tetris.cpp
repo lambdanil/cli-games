@@ -608,23 +608,23 @@ int main()
         start = std::chrono::high_resolution_clock::now();
 
         // Actions
-        if (*mv == 'd') {
+        if (*mv == -39) {
             if (collision_check(grid, (WIDTH + 2), (HEIGHT + 1 + SHAPESIZE), realshape, SHAPESIZE, shape.xpos, shape.ypos, true))
                 shape.xpos += 1;
             prerun(grid, WIDTH + 2, HEIGHT + 1 + SHAPESIZE, nxpos, nypos, realshape, rfilled);
             print_grid(grid, (WIDTH + 2), (HEIGHT + 1 + SHAPESIZE));
         }
-        else if (*mv == 'a') {
+        else if (*mv == -37) {
             if (collision_check(grid, (WIDTH + 2), (HEIGHT + 1 + SHAPESIZE), realshape, SHAPESIZE, shape.xpos, shape.ypos, false))
                 shape.xpos -= 1;
             prerun(grid, WIDTH + 2, HEIGHT + 1 + SHAPESIZE, nxpos, nypos, realshape, rfilled);
             print_grid(grid, (WIDTH + 2), (HEIGHT + 1 + SHAPESIZE));
         }
-        else if (*mv == 's' || *mv == 'f') {
-            if (*mv == 's' && drop_check(grid, (WIDTH + 2), HEIGHT + 1 + SHAPESIZE, realshape, SHAPESIZE, shape.xpos, shape.ypos)) {
+        else if (*mv == -40 || *mv == 32) {
+            if (*mv == -40 && drop_check(grid, (WIDTH + 2), HEIGHT + 1 + SHAPESIZE, realshape, SHAPESIZE, shape.xpos, shape.ypos)) {
                 shape.ypos += 1;
             }
-            else if (*mv == 'f') {
+            else if (*mv == 32) {
                 while (true) {
                     if (drop_check(grid, (WIDTH + 2), HEIGHT + 1 + SHAPESIZE, realshape, SHAPESIZE, shape.xpos, shape.ypos)) {
                         shape.ypos += 1;
@@ -642,7 +642,7 @@ int main()
             prerun(grid, WIDTH + 2, HEIGHT + 1 + SHAPESIZE, nxpos, nypos, realshape, rfilled);
             print_grid(grid, (WIDTH + 2), (HEIGHT + 1 + SHAPESIZE));
         }
-        else if (*mv == 'w') {
+        else if (*mv == -38) {
             //print_grid(grid, (WIDTH + 2), (HEIGHT + 1 + SHAPESIZE));
             rotate(realshape, SHAPESIZE);
             prerun(grid, WIDTH + 2, HEIGHT + 1 + SHAPESIZE, nxpos, nypos, realshape, rfilled);

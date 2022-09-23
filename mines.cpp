@@ -8,12 +8,12 @@
 #define UNCOVER_CHAR ' '
 #define FLAG_CHAR 'f'
 
-#define KEY_UP 'w'
-#define KEY_DOWN 's'
-#define KEY_RIGHT 'd'
-#define KEY_LEFT 'a'
-#define KEY_FLAG 'f'
-#define KEY_UNCOVER 'o'
+#define KEY_UP -38 // arrow keys
+#define KEY_DOWN -40
+#define KEY_RIGHT -39
+#define KEY_LEFT -37
+#define KEY_FLAG 32 // space
+#define KEY_UNCOVER 10 // enter
 
 #define COLOR_ENABLE
 
@@ -315,6 +315,7 @@ string get_color(char c) {
 }
 
 void print_game(struct game_state& game) {
+  cls();
   struct scr_buf& scr = game.screen;
   struct scr_buf& grid = game.grid;
   char out;
@@ -432,6 +433,8 @@ void set_screen(struct game_state& game) {
 void uncover_tile(struct game_state& game, struct pos tile) {
   struct rel_pos c;
   struct pos abs;
+  if (game.screen.buf[tile.y][tile.x] == FLAG_CHAR)
+    return;
   if (game.grid.buf[tile.y][tile.x] == MINE_CHAR)
     quit_game(game);
   if (game.screen.buf[tile.y][tile.x] == UNCOVER_CHAR &&
@@ -538,10 +541,9 @@ int main() {
   bool first_uncover = true;
 
   while (true) {
-    print_buf(game.grid);
     print_game(game);
     mv = key_press();
-    if (mv == KEY_UNCOVER && first_uncover) { // Ensure first click always uncovers empty area
+    if (mv == KEY_UNCOVER && first_uncover && game.screen.buf[game.cursor.y][game.cursor.x] != FLAG_CHAR) { // Ensure first click always uncovers empty area
       while (game.grid.buf[game.cursor.y][game.cursor.x] != EMPTY_CHAR) {
         flush_mines(game);
         fill_mines(game);
