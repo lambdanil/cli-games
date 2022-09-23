@@ -606,7 +606,6 @@ int main() {
 
   while (true) {
     print_game(game);
-    cout << game.uncovered;
     mv = key_press();
     if (mv == KEY_UNCOVER && first_uncover && game.screen.buf[game.cursor.y][game.cursor.x] != FLAG_CHAR) { // Ensure first click always uncovers empty area
       while (game.grid.buf[game.cursor.y][game.cursor.x] != EMPTY_CHAR) {
