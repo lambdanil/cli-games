@@ -17,10 +17,10 @@ using std::stringstream; using std::endl;
 #define FLOOR_CHAR ' '
 #define BORDER_CHAR '#'
 
-#define KEY_UP -38
-#define KEY_DOWN -40
-#define KEY_RIGHT -39
-#define KEY_LEFT -37
+#define KEY_UP 'w'
+#define KEY_DOWN 's'
+#define KEY_RIGHT 'd'
+#define KEY_LEFT 'a'
 
 #define COLOR_ENABLE
 //#define SINGLE_DRAW // draw entire buffer at once - may improve performance in some cases
