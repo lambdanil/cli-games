@@ -256,6 +256,7 @@ struct scr_buf {
 struct game_state {
   int flags;
   unsigned int mines;
+  unsigned int maxmines;
   char difficulty; // 'e'asy, 'm'edium, 'E'xpert
   struct scr_buf screen;
   struct scr_buf grid;
@@ -331,6 +332,7 @@ void print_game(struct game_state& game) {
 
   const unsigned int height = scr.height;
   const unsigned int width = scr.width;
+  cout << "Mines Left: " << game.mines << "\n";
   for (unsigned int i = 0; i < height; i++) {
     for (unsigned int j = 0; j < width; j++) {
       if (scr.buf[i][j] == UNCOVER_CHAR)
@@ -389,6 +391,18 @@ unsigned int count_adjacent(struct scr_buf& grid, struct pos abs) {
   return n;
 }
 
+unsigned int count_adjacent_flags(struct scr_buf& grid, struct pos abs) {
+  struct rel_pos c;
+  unsigned int n = 0;
+  for (int k = 0; k < 8; k++) {
+    c = adjacent[k];
+    if (abs.y+c.y >= 0 && abs.x+c.x >= 0 && abs.y+c.y < grid.height && abs.x+c.x < grid.width)
+      if (grid.buf[abs.y+c.y][abs.x+c.x] == FLAG_CHAR)
+        n++;
+  }
+  return n;
+}
+
 void add_nums(struct scr_buf& grid) {
   unsigned int n;
   struct pos p;
@@ -414,7 +428,7 @@ void flush_mines(struct game_state& game) {
 }
 
 void fill_mines(struct game_state& game) {
-  unsigned int set_mines = game.mines;
+  unsigned int set_mines = game.maxmines;
   for (unsigned int i = 0; i < game.grid.height; i++) {
     for (unsigned int j = 0; j < game.grid.width; j++) {
       game.grid.buf[i][j] = MINE_CHAR;
@@ -446,7 +460,7 @@ void uncover_tile(struct game_state& game, struct pos tile) {
   if (game.grid.buf[tile.y][tile.x] == MINE_CHAR)
     quit_game(game);
   if (game.screen.buf[tile.y][tile.x] == UNCOVER_CHAR &&
-      (int)(game.grid.buf[tile.y][tile.x] - '0') == count_adjacent(game.grid, tile)) {
+      (int)(game.grid.buf[tile.y][tile.x] - '0') == count_adjacent_flags(game.screen, tile)) {
     for (int k = 0; k < 8; k++) {
       c = adjacent[k];
       if (tile.y+c.y >= 0 && tile.x+c.x >= 0 && tile.y+c.y < game.grid.height && tile.x+c.x < game.grid.width) {
@@ -472,10 +486,14 @@ void uncover_tile(struct game_state& game, struct pos tile) {
 }
 
 void flag_tile(struct game_state& game, struct pos tile) {
-  if (game.screen.buf[tile.y][tile.x] == COVER_CHAR)
+  if (game.screen.buf[tile.y][tile.x] == COVER_CHAR) {
     game.screen.buf[tile.y][tile.x] = FLAG_CHAR;
-  else if (game.screen.buf[tile.y][tile.x] == FLAG_CHAR)
+    game.mines--;
+  }
+  else if (game.screen.buf[tile.y][tile.x] == FLAG_CHAR) {
     game.screen.buf[tile.y][tile.x] = COVER_CHAR;
+    game.mines++;
+  }
 }
 
 void init_game(struct game_state& game, char diff) {
@@ -505,6 +523,7 @@ void init_game(struct game_state& game, char diff) {
       break;
   }
   game.flags = game.mines;
+  game.maxmines = game.mines;
   alloc_scr_buf(game.screen);
   alloc_scr_buf(game.grid);
   fill_mines(game);
@@ -540,9 +559,25 @@ void eval_key(struct game_state& game, char key) {
   }
 }
 
+void check_wincond(struct game_state& game) {
+  int res = game.maxmines;
+  for (int i = 0; i < game.grid.height; i++) {
+    for (int j = 0; j < game.grid.width; j++) {
+      if (game.screen.buf[i][j] == FLAG_CHAR && game.grid.buf[i][j] == MINE_CHAR)
+        res--;
+    }
+  }
+  if (!res) {
+        cout << "\nYou won!\n";
+        free_scr_buf(game.screen);
+        free_scr_buf(game.grid);
+        exit(0);
+  }
+}
+
 int main() {
   srand(time(0));
-  char dif = 'E';
+  char dif = 'e';
   char mv;
   struct game_state game;
   init_game(game, dif);
@@ -559,6 +594,7 @@ int main() {
       first_uncover = false;
     }
     eval_key(game, mv);
+    check_wincond(game);
   }
   return 0;
 }
