@@ -588,7 +588,7 @@ int main() {
   srand((unsigned)time(0));
   char dif = 0;
   cls();
-  cout << "\nPlease choose a difficulty:\t(1) Easy\n\t\t\t\t(2) Intermediate\n\t\t\t\t(3) Expert:\n\n";
+  cout << "\nPlease choose a difficulty:\t(1) Easy\n\t\t\t\t(2) Intermediate\n\t\t\t\t(3) Expert\n\n";
   while (dif != '1' && dif != '2' && dif != '3') {
     std::cin >> dif;
   }
