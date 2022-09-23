@@ -254,6 +254,7 @@ struct scr_buf {
 };
 
 struct game_state {
+  int uncovered;
   int flags;
   unsigned int mines;
   unsigned int maxmines;
@@ -471,7 +472,10 @@ void uncover_tile(struct game_state& game, struct pos tile) {
       }
     }
   }
-  game.screen.buf[tile.y][tile.x] = UNCOVER_CHAR;
+  if (game.screen.buf[tile.y][tile.x] != UNCOVER_CHAR) {
+    game.screen.buf[tile.y][tile.x] = UNCOVER_CHAR;
+    game.uncovered++;
+  }
   if (game.grid.buf[tile.y][tile.x] == EMPTY_CHAR) {
     for (int k = 0; k < 8; k++) {
       c = adjacent[k];
@@ -523,6 +527,7 @@ void init_game(struct game_state& game, char diff) {
       break;
   }
   game.flags = game.mines;
+  game.uncovered = 0;
   game.maxmines = game.mines;
   alloc_scr_buf(game.screen);
   alloc_scr_buf(game.grid);
@@ -561,12 +566,16 @@ void eval_key(struct game_state& game, char key) {
 
 void check_wincond(struct game_state& game) {
   int res = game.maxmines;
-  for (int i = 0; i < game.grid.height; i++) {
-    for (int j = 0; j < game.grid.width; j++) {
-      if (game.screen.buf[i][j] == FLAG_CHAR && game.grid.buf[i][j] == MINE_CHAR)
-        res--;
+  if (!game.mines) {
+    for (int i = 0; i < game.grid.height; i++) {
+      for (int j = 0; j < game.grid.width; j++) {
+        if (game.screen.buf[i][j] == FLAG_CHAR && game.grid.buf[i][j] == MINE_CHAR)
+          res--;
+      }
     }
   }
+  if (game.uncovered == (game.grid.width * game.grid.height) - game.maxmines)
+    res = 0;
   if (!res) {
         cout << "\nYou won!\n";
         free_scr_buf(game.screen);
@@ -576,8 +585,20 @@ void check_wincond(struct game_state& game) {
 }
 
 int main() {
-  srand(time(0));
-  char dif = 'e';
+  srand((unsigned)time(0));
+  char dif = 0;
+  cls();
+  cout << "\nPlease choose a difficulty:\t(1) Easy\n\t\t\t\t(2) Intermediate\n\t\t\t\t(3) Expert:\n\n";
+  while (dif != '1' && dif != '2' && dif != '3') {
+    std::cin >> dif;
+  }
+  std::cin.ignore();
+  if (dif == '1')
+    dif = 'e';
+  if (dif == '2')
+    dif = 'm';
+  if (dif == '3')
+    dif = 'E';
   char mv;
   struct game_state game;
   init_game(game, dif);
@@ -585,6 +606,7 @@ int main() {
 
   while (true) {
     print_game(game);
+    cout << game.uncovered;
     mv = key_press();
     if (mv == KEY_UNCOVER && first_uncover && game.screen.buf[game.cursor.y][game.cursor.x] != FLAG_CHAR) { // Ensure first click always uncovers empty area
       while (game.grid.buf[game.cursor.y][game.cursor.x] != EMPTY_CHAR) {
