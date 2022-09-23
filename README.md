@@ -28,7 +28,7 @@ to run.
 ### Minesweeper
 * ``wasd`` directions
 * ``Return`` uncover tile
-* ``Space`` add flag``
+* ``Space`` add flag
 
 ---
 
