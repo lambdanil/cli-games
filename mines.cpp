@@ -54,7 +54,7 @@
 
 #define COL_HIDDEN COL_GRAY
 #define COL_EMPTY ""
-#define COL_FLAG COL_RED
+#define COL_FLAG "\033[41m"
 
 #define CURSOR_COLOR "\033[47m"
 
