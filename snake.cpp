@@ -326,6 +326,11 @@ void next_frame(struct game_state& game) {
     }
   }
 
+  if (game.head.x == game.food.x && game.head.y == game.food.y) {
+    add_segment_next_loop = true;
+    move_food(game);
+  }
+
   switch (game.dir) {
     case 'u':
       if (game.head.y == 0)
